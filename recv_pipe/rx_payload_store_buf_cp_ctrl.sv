@@ -33,9 +33,16 @@ module rx_payload_store_buf_cp_ctrl (
 
     ,input  logic                                   wr_buf_ctrl_wr_req_done
     ,output logic                                   ctrl_wr_buf_wr_req_done_rdy
+
+    ,output                                 rx_store_buf_rx_buf_store_rd_req_val
+    ,input logic                            rx_buf_store_rx_store_buf_rd_req_rdy
+
+    ,input logic                            rx_buf_store_rx_store_buf_rd_resp_val
+    ,output                                 rx_store_buf_rx_buf_store_rd_resp_rdy
     
     ,output logic                                   save_q_entry
     ,output logic                                   save_commit_idx
+    ,output logic                                   save_commit_real_ptr
     ,output logic                                   init_tmp_buf_rd_metadata
     ,output logic                                   update_tmp_buf_rd_metadata
 
@@ -79,6 +86,7 @@ module rx_payload_store_buf_cp_ctrl (
 
         save_q_entry = 1'b0;
         save_commit_idx = 1'b0;
+        save_commit_real_ptr = 1'b0;
         init_tmp_buf_rd_metadata = 1'b0;
         update_tmp_buf_rd_metadata = 1'b0;
 
@@ -90,6 +98,9 @@ module rx_payload_store_buf_cp_ctrl (
        
         store_buf_tmp_buf_free_slab_rx_req_val = 1'b0;
         store_buf_commit_idx_wr_req_val = 1'b0;
+
+        rx_store_buf_rx_buf_store_rd_req_val = 1'b0;
+        rx_store_buf_rx_buf_store_rd_resp_rdy = 1'b0;
 
         state_next = state_reg;
         case (state_reg)
@@ -123,17 +134,17 @@ module rx_payload_store_buf_cp_ctrl (
                     state_next = COMMIT_IDX_RESP;
                 end
             end
-            BUF_STORE_REQ: begin // TODO: actually declare these wires
-                store_buf_buf_store_rd_req_val = 1'b1;
+            BUF_STORE_REQ: begin 
+                rx_store_buf_rx_buf_store_rd_req_val = 1'b1;
                 // the idx is stored in datapath during this state.
-                if (store_buf_buf_store_rd_req_rdy) begin
+                if (rx_buf_store_rx_store_buf_rd_req_rdy) begin
                     state_next = BUF_STORE_RESP;
                 end
             end
             BUF_STORE_RESP: begin
-                store_buf_buf_store_rd_resp_rdy = 1'b1;
+                rx_store_buf_rx_buf_store_rd_resp_rdy = 1'b1;
 
-                if (store_buf_buf_store_rd_resp_val) begin
+                if (rx_buf_store_rx_store_buf_rd_resp_val) begin
                     save_commit_real_ptr = 1'b1;
                     state_next = DATA_COPY_START;
                 end

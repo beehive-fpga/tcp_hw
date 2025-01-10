@@ -20,9 +20,15 @@ import tcp_pkg::*;
 
     ,output logic   [FLOWID_W-1:0]                  store_buf_commit_idx_wr_req_flowid
     ,output tcp_buf_idx                             store_buf_commit_idx_wr_req_data
+
+    ,output         [FLOWID_W-1:0]          rx_store_buf_rx_buf_store_rd_req_flowid
+    ,output         [RX_PAYLOAD_IDX_W-1:0]  rx_store_buf_rx_buf_store_rd_req_idx
+
+    ,input          tcp_buf                 rx_buf_store_rx_store_buf_rd_resp_data
     
     ,input  logic                                   save_q_entry
-    ,input  logic                                   save_commit_idx // TODO: add save_commit_real_ptr here
+    ,input  logic                                   save_commit_idx
+    ,input  logic                                   save_commit_real_ptr
     ,input  logic                                   init_tmp_buf_rd_metadata
     ,input  logic                                   update_tmp_buf_rd_metadata
     ,output logic                                   last_transfer
@@ -30,7 +36,7 @@ import tcp_pkg::*;
     ,output logic                                   pkt_len_0
 
     ,output logic   [FLOWID_W-1:0]                  datapath_wr_buf_req_flowid
-    ,output logic   [RX_PAYLOAD_IDX_W-1:0]          datapath_wr_buf_req_wr_idx
+    ,output logic   [RX_PAYLOAD_PTR_W-1:0]          datapath_wr_buf_req_wr_ptr_real
     ,output logic   [`MSG_DATA_SIZE_WIDTH-1:0]      datapath_wr_buf_req_size
 
     ,output logic   [`NOC_DATA_WIDTH-1:0]           datapath_wr_buf_req_data
@@ -41,6 +47,8 @@ import tcp_pkg::*;
 
     tcp_buf_idx                         commit_idx_reg;
     tcp_buf_idx                         commit_idx_next;
+    tcp_buf                             commit_real_ptr_reg;
+    tcp_buf                             commit_real_ptr_next;
     logic   [RX_TMP_BUF_ADDR_W-1:0]     read_addr_reg;
     logic   [RX_TMP_BUF_ADDR_W-1:0]     read_addr_next;
     logic   [PAYLOAD_ENTRY_LEN_W-1:0]   bytes_left_reg;
@@ -53,7 +61,7 @@ import tcp_pkg::*;
     assign last_transfer = bytes_left_reg <= `NOC_DATA_BYTES;
 
     assign datapath_wr_buf_req_flowid = q_entry_reg.flowid;
-    assign datapath_wr_buf_req_wr_idx = commit_idx_reg.idx[RX_PAYLOAD_IDX_W-1:0];
+    assign datapath_wr_buf_req_wr_ptr_real = commit_real_ptr_reg.ptr; // TODO: currently ignoring len and cap... hopefully that's ok!
     assign datapath_wr_buf_req_size = {{(`MSG_DATA_SIZE_WIDTH-PAYLOAD_ENTRY_LEN_W){1'b0}},
                                           q_entry_reg.payload_entry.payload_len}; // TODO: change this if i ever want payload len != len to write at location.
 
@@ -61,6 +69,9 @@ import tcp_pkg::*;
     assign store_buf_commit_idx_wr_req_flowid = q_entry_reg.flowid;
     // assign store_buf_commit_idx_wr_req_data = commit_idx_reg + q_entry_reg.payload_entry.payload_len;
     assign store_buf_commit_idx_wr_req_data.idx = commit_idx_reg.idx + 1;
+
+    assign rx_store_buf_rx_buf_store_rd_req_flowid = q_entry_reg.flowid; // TODO: verify... i just copied from above
+    assign rx_store_buf_rx_buf_store_rd_req_idx = commit_idx_reg.idx[RX_PAYLOAD_IDX_W-1:0];
 
     assign datapath_wr_buf_req_data = tmp_buf_store_store_buf_rx_rd_resp_data;
 
@@ -71,12 +82,14 @@ import tcp_pkg::*;
         if (rst) begin
             q_entry_reg <= '0;
             commit_idx_reg <= '0;
+            commit_real_ptr_reg <= '0;
             read_addr_reg <= '0;
             bytes_left_reg <= '0;
         end
         else begin
             q_entry_reg <= q_entry_next;
             commit_idx_reg <= commit_idx_next;
+            commit_real_ptr_reg <= commit_real_ptr_next;
             read_addr_reg <= read_addr_next;
             bytes_left_reg <= bytes_left_next;
         end
@@ -84,6 +97,7 @@ import tcp_pkg::*;
     
     assign q_entry_next = save_q_entry ? read_store_buf_q_req_data : q_entry_reg;
     assign commit_idx_next = save_commit_idx ? commit_idx_store_buf_rd_resp_data : commit_idx_reg;
+    assign commit_real_ptr_next = save_commit_real_ptr ? rx_buf_store_rx_store_buf_rd_resp_data : commit_real_ptr_reg;
 
     always_comb begin
         if (init_tmp_buf_rd_metadata) begin
