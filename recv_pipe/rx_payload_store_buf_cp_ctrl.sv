@@ -16,14 +16,14 @@ module rx_payload_store_buf_cp_ctrl (
     ,output logic                                   store_buf_tmp_buf_free_slab_rx_req_val
     ,input  logic                                   tmp_buf_free_slab_store_buf_rx_req_rdy
     
-    ,output logic                                   store_buf_commit_ptr_rd_req_val
-    ,input  logic                                   commit_ptr_store_buf_rd_req_rdy
+    ,output logic                                   store_buf_commit_idx_rd_req_val
+    ,input  logic                                   commit_idx_store_buf_rd_req_rdy
                                                                             
-    ,input  logic                                   commit_ptr_store_buf_rd_resp_val
-    ,output logic                                   store_buf_commit_ptr_rd_resp_rdy
+    ,input  logic                                   commit_idx_store_buf_rd_resp_val
+    ,output logic                                   store_buf_commit_idx_rd_resp_rdy
 
-    ,output logic                                   store_buf_commit_ptr_wr_req_val
-    ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
+    ,output logic                                   store_buf_commit_idx_wr_req_val
+    ,input  logic                                   commit_idx_store_buf_wr_req_rdy
 
     ,output logic                                   ctrl_wr_buf_req_val   
     ,input  logic                                   wr_buf_ctrl_req_rdy
@@ -35,7 +35,7 @@ module rx_payload_store_buf_cp_ctrl (
     ,output logic                                   ctrl_wr_buf_wr_req_done_rdy
     
     ,output logic                                   save_q_entry
-    ,output logic                                   save_commit_ptr
+    ,output logic                                   save_commit_idx
     ,output logic                                   init_tmp_buf_rd_metadata
     ,output logic                                   update_tmp_buf_rd_metadata
 
@@ -44,9 +44,11 @@ module rx_payload_store_buf_cp_ctrl (
     ,input  logic                                   pkt_len_0
 );
 
-    typedef enum logic[2:0] {
+    typedef enum logic[4:0] {
         READY = 3'd0,
-        COMMIT_PTR_RESP = 3'd1,
+        COMMIT_IDX_RESP = 3'd1,
+        BUF_STORE_REQ = 4'd8,
+        BUF_STORE_RESP = 4'd9,
         WR_REQ = 3'd2,
         DATA_COPY_START = 3'd3,
         DATA_COPY = 3'd4,
@@ -76,18 +78,18 @@ module rx_payload_store_buf_cp_ctrl (
         read_store_buf_q_req_val = 1'b0;
 
         save_q_entry = 1'b0;
-        save_commit_ptr = 1'b0;
+        save_commit_idx = 1'b0;
         init_tmp_buf_rd_metadata = 1'b0;
         update_tmp_buf_rd_metadata = 1'b0;
 
         store_buf_tmp_buf_store_rx_rd_req_val = 1'b0;
         store_buf_tmp_buf_store_rx_rd_resp_rdy = 1'b1;
 
-        store_buf_commit_ptr_rd_req_val = 1'b0;
-        store_buf_commit_ptr_rd_resp_rdy = 1'b0;
+        store_buf_commit_idx_rd_req_val = 1'b0;
+        store_buf_commit_idx_rd_resp_rdy = 1'b0;
        
         store_buf_tmp_buf_free_slab_rx_req_val = 1'b0;
-        store_buf_commit_ptr_wr_req_val = 1'b0;
+        store_buf_commit_idx_wr_req_val = 1'b0;
 
         state_next = state_reg;
         case (state_reg)
@@ -101,24 +103,39 @@ module rx_payload_store_buf_cp_ctrl (
                     else if (~accept_payload) begin
                         state_next = FREE_NON_ACCEPTED;
                     end
-                    else if (commit_ptr_store_buf_rd_req_rdy) begin
-                        store_buf_commit_ptr_rd_req_val = 1'b1;
+                    else if (commit_idx_store_buf_rd_req_rdy) begin
+                        store_buf_commit_idx_rd_req_val = 1'b1;
 
                         init_tmp_buf_rd_metadata = 1'b1;
 
-                        state_next = COMMIT_PTR_RESP;
+                        state_next = COMMIT_IDX_RESP;
                     end
                 end
             end
-            COMMIT_PTR_RESP: begin
-                store_buf_commit_ptr_rd_resp_rdy = 1'b1;
+            COMMIT_IDX_RESP: begin
+                store_buf_commit_idx_rd_resp_rdy = 1'b1;
 
-                if (commit_ptr_store_buf_rd_resp_val) begin
-                    save_commit_ptr = 1'b1;
+                if (commit_idx_store_buf_rd_resp_val) begin
+                    save_commit_idx = 1'b1;
                     state_next = DATA_COPY_START;
                 end
                 else begin
-                    state_next = COMMIT_PTR_RESP;
+                    state_next = COMMIT_IDX_RESP;
+                end
+            end
+            BUF_STORE_REQ: begin // TODO: actually declare these wires
+                store_buf_buf_store_rd_req_val = 1'b1;
+                // the idx is stored in datapath during this state.
+                if (store_buf_buf_store_rd_req_rdy) begin
+                    state_next = BUF_STORE_RESP;
+                end
+            end
+            BUF_STORE_RESP: begin
+                store_buf_buf_store_rd_resp_rdy = 1'b1;
+
+                if (store_buf_buf_store_rd_resp_val) begin
+                    save_commit_real_ptr = 1'b1;
+                    state_next = DATA_COPY_START;
                 end
             end
             DATA_COPY_START: begin
@@ -161,9 +178,9 @@ module rx_payload_store_buf_cp_ctrl (
                 end
             end
             UPDATE_POINTER: begin
-                if (commit_ptr_store_buf_wr_req_rdy & tmp_buf_free_slab_store_buf_rx_req_rdy) begin
+                if (commit_idx_store_buf_wr_req_rdy & tmp_buf_free_slab_store_buf_rx_req_rdy) begin
                     store_buf_tmp_buf_free_slab_rx_req_val = 1'b1;
-                    store_buf_commit_ptr_wr_req_val = 1'b1;
+                    store_buf_commit_idx_wr_req_val = 1'b1;
                 
                     state_next = READY;
                 end
@@ -188,18 +205,18 @@ module rx_payload_store_buf_cp_ctrl (
                 read_store_buf_q_req_val = 'X;
 
                 save_q_entry = 'X;
-                save_commit_ptr = 'X;
+                save_commit_idx = 'X;
                 init_tmp_buf_rd_metadata = 'X;
                 update_tmp_buf_rd_metadata = 'X;
 
                 store_buf_tmp_buf_store_rx_rd_req_val = 'X;
                 store_buf_tmp_buf_store_rx_rd_resp_rdy = 'X;
 
-                store_buf_commit_ptr_rd_req_val = 'X;
-                store_buf_commit_ptr_rd_resp_rdy = 'X;
+                store_buf_commit_idx_rd_req_val = 'X;
+                store_buf_commit_idx_rd_resp_rdy = 'X;
        
                 store_buf_tmp_buf_free_slab_rx_req_val = 'X;
-                store_buf_commit_ptr_wr_req_val = 'X;
+                store_buf_commit_idx_wr_req_val = 'X;
 
                 state_next = UND;
             end
