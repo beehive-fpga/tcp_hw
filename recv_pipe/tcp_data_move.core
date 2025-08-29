@@ -11,11 +11,11 @@ filesets:
             - tcp_tmp_rx_buf_datapath.sv
             - tcp_tmp_rx_buf_wrap.sv
         depend:
-            - uwcse:buckfast:includes
-            - uwcse:buckfast:ram
-            - uwcse:buckfast:bsg_mem
-            - uwcse:buckfast:bsg_misc
-            - uwcse:buckfast:bsg_dataflow
+            - uwcse:beehive:common_inc
+            - uwcse:beehive:ram
+            - uwcse:basejump:bsg_mem
+            - uwcse:basejump:bsg_misc
+            - uwcse:basejump:bsg_dataflow
             - uwcse:buckfast:mem_alloc
             - uwcse:beehive:tcp_inc
             - uwcse:beehive:circ_buf_helpers

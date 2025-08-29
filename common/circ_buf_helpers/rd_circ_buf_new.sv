@@ -134,13 +134,13 @@ import mem_noc_helper_pkg::*;
          .clk   (clk    )
         ,.rst   (rst    )
     
-        ,.rd_mem_noc_req_noc0_val   (rd_buf_noc0_val                    )
-        ,.rd_mem_noc_req_noc0_data  (rd_buf_noc0_data                   )
-        ,.noc_rd_mem_req_noc0_rdy   (noc0_rd_buf_rdy                    )
+        ,.rd_mem_noc_req_noc_val    (rd_buf_noc0_val                    )
+        ,.rd_mem_noc_req_noc_data   (rd_buf_noc0_data                   )
+        ,.noc_rd_mem_req_noc_rdy    (noc0_rd_buf_rdy                    )
     
-        ,.noc_rd_mem_resp_noc0_val  (noc0_rd_buf_val                    )
-        ,.noc_rd_mem_resp_noc0_data (noc0_rd_buf_data                   )
-        ,.rd_mem_noc_resp_noc0_rdy  (rd_buf_noc0_rdy                    )
+        ,.noc_rd_mem_resp_noc_val   (noc0_rd_buf_val                    )
+        ,.noc_rd_mem_resp_noc_data  (noc0_rd_buf_data                   )
+        ,.rd_mem_noc_resp_noc_rdy   (rd_buf_noc0_rdy                    )
     
         ,.src_rd_mem_req_val        (ctrl_rd_noc_req_val                )
         ,.src_rd_mem_req_entry      (datap_rd_noc_req                   )

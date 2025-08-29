@@ -12,7 +12,7 @@ filesets:
             - wr_circ_buf_ctrl.sv
             - wr_circ_buf_datapath.sv
         depend:
-            - uwcse:buckfast:includes
+            - uwcse:beehive:common_inc
             - uwcse:beehive:tcp_inc
             - uwcse:beehive:noc_helpers
         file_type: systemVerilogSource

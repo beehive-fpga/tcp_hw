@@ -39,8 +39,8 @@ filesets:
 
         depend:
             - uwcse:beehive:tracker
-            - uwcse:buckfast:includes
-            - uwcse:buckfast:fifo
+            - uwcse:beehive:common_inc
+            - uwcse:beehive:fifo
             - uwcse:beehive:circ_buf_helpers
             - uwcse:beehive:data_converters
         file_type: systemVerilogSource

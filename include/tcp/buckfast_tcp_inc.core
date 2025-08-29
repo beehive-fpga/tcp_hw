@@ -10,8 +10,7 @@ filesets:
             - tcp_pkg.sv
             - tcp_misc_pkg.sv
         depend:
-            - uwcse:buckfast:bsg_include
-            - uwcse:buckfast:includes
+            - uwcse:basejump:bsg_include
             - uwcse:beehive:common_inc
         file_type: systemVerilogSource
 
