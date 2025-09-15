@@ -1,7 +1,7 @@
 `include "noc_defs.vh"
 module wr_circ_buf 
 import tcp_pkg::*;
-import mem_noc_helper_pkg::*;
+import mem_msg_pkg::*;
 #(
      parameter BUF_PTR_W=-1
     ,parameter SRC_X = 0
@@ -22,7 +22,7 @@ import mem_noc_helper_pkg::*;
     ,output logic                               wr_buf_noc_resp_noc_rdy
 
     ,input                                      src_wr_buf_req_val
-    ,input          [FLOWID_W-1:0]              src_wr_buf_req_flowid
+    ,input  vaddr_t                             src_wr_buf_req_base_addr
     ,input          [BUF_PTR_W-1:0]             src_wr_buf_req_wr_ptr
     ,input          [`MSG_DATA_SIZE_WIDTH-1:0]  src_wr_buf_req_size
     ,output logic                               wr_buf_src_req_rdy

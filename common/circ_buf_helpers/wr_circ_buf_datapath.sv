@@ -1,14 +1,14 @@
 `include "noc_defs.vh"
 module wr_circ_buf_datapath 
 import tcp_pkg::*;
-import mem_noc_helper_pkg::*;
+import mem_msg_pkg::*;
 #(
      parameter BUF_PTR_W = 0
 )(
      input clk
     ,input rst
 
-    ,input          [FLOWID_W-1:0]              src_wr_buf_req_flowid
+    ,input  vaddr_t                             src_wr_buf_req_base_addr
     ,input          [BUF_PTR_W-1:0]             src_wr_buf_req_wr_ptr
     ,input          [`MSG_DATA_SIZE_WIDTH-1:0]  src_wr_buf_req_size
 
@@ -44,6 +44,10 @@ import mem_noc_helper_pkg::*;
 
     logic   [BUF_PTR_W-1:0]             whole_req_wr_ptr_reg;
     logic   [BUF_PTR_W-1:0]             whole_req_wr_ptr_next;
+
+    vaddr_t base_addr_reg;
+    vaddr_t base_addr_next;
+    logic   [VADDR_W-1:0]   vaddr_cast;
    
     // store the bytes left to send
     logic   [`MSG_DATA_SIZE_WIDTH-1:0]  curr_wr_req_rem_reg;
@@ -97,8 +101,9 @@ import mem_noc_helper_pkg::*;
 
     assign bytes_to_end = {1'b1, {(BUF_PTR_W){1'b0}}} - curr_wr_req_ptr_reg;
 
+    assign vaddr_cast = base_addr_reg;
     assign mem_req.mem_req_size = split_req ? bytes_to_end : curr_wr_req_rem_reg;
-    assign mem_req.mem_req_addr = {req_flowid_reg,curr_wr_req_ptr_reg};
+    assign mem_req.mem_req_addr = vaddr_cast + curr_wr_req_ptr_reg;
 
     always_ff @(posedge clk) begin
         if (rst) begin
@@ -128,6 +133,7 @@ import mem_noc_helper_pkg::*;
 
             save_line_reg <= save_line_next;
             save_line_shift_reg <= save_line_shift_next;
+            base_addr_reg <= base_addr_next;
         end
     end
     
@@ -136,11 +142,13 @@ import mem_noc_helper_pkg::*;
             whole_req_size_next = src_wr_buf_req_size;
             req_flowid_next = src_wr_buf_req_flowid;
             whole_req_wr_ptr_next = src_wr_buf_req_wr_ptr;
+            base_addr_next = src_wr_buf_req_base_addr;
         end
         else begin
             whole_req_size_next = whole_req_size_reg;
             req_flowid_next = req_flowid_reg;
             whole_req_wr_ptr_next = whole_req_wr_ptr_reg;
+            base_addr_next = base_addr_reg;
         end
     end
 

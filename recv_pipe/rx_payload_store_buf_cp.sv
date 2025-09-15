@@ -1,29 +1,33 @@
 `include "noc_defs.vh"
 module rx_payload_store_buf_cp 
 import tcp_pkg::*;
+import mem_msg_pkg::*;
 #(
      parameter SRC_X = 0
     ,parameter SRC_Y = 0
     ,parameter RX_DRAM_X = 0
     ,parameter RX_DRAM_Y = 0
     ,parameter FBITS = 0
+    ,parameter MONITOR_DATA_W = 0
 )(
      input clk
     ,input rst
     
     // I/O for the NoC
-    ,output logic                                   rx_payload_noc0_val
-    ,output logic   [`NOC_DATA_WIDTH-1:0]           rx_payload_noc0_data
-    ,input                                          noc0_rx_payload_rdy
+    ,output logic                                   rx_payload_monitor_val
+    ,output logic   [MONITOR_DATA_W-1:0]            rx_payload_monitor_data
+    ,input                                          monitor_rx_payload_rdy
     
-    ,input                                          noc_rx_payload_val
-    ,input          [`NOC_DATA_WIDTH-1:0]           noc_rx_payload_data
-    ,output logic                                   rx_payload_noc_rdy
+    ,input                                          monitor_rx_payload_val
+    ,input          [MONITOR_DATA_W-1:0]            monitor_rx_payload_data
+    ,output logic                                   rx_payload_monitor_rdy
     
     // For reading out a packet from the queue
     ,output logic                                   read_store_buf_q_req_val
     ,input  rx_store_buf_q_struct                   read_store_buf_q_req_data
     ,input  logic                                   read_store_buf_q_empty
+
+    ,input  logic                                   
 
     // for getting stuff from the temp buffer
     ,output logic                                   store_buf_tmp_buf_store_rx_rd_req_val
@@ -50,6 +54,14 @@ import tcp_pkg::*;
     ,output logic   [FLOWID_W-1:0]                  store_buf_commit_ptr_wr_req_flowid
     ,output logic   [RX_PAYLOAD_PTR_W:0]            store_buf_commit_ptr_wr_req_data
     ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
+    
+    ,input  logic                                   store_buf_base_addr_rd_req_val
+    ,input  logic   [FLOWID_W-1:0]                  store_buf_base_addr_rd_req_addr
+    ,output logic                                   base_addr_store_buf_rd_req_rdy
+
+    ,output logic                                   base_addr_store_buf_rd_resp_val
+    ,output vaddr_t                                 base_addr_store_buf_rd_resp_data
+    ,input  logic                                   store_buf_base_addr_rd_resp_rdy
 );
     
     logic                                   ctrl_wr_buf_req_val;
@@ -62,7 +74,7 @@ import tcp_pkg::*;
     logic                                   ctrl_wr_buf_wr_req_done_rdy;
 
     logic                                   save_q_entry;
-    logic                                   save_commit_ptr;
+    logic                                   store_ptrs;
     logic                                   init_tmp_buf_rd_metadata;
     logic                                   update_tmp_buf_rd_metadata;
 
@@ -70,7 +82,7 @@ import tcp_pkg::*;
     logic                                   accept_payload;
     logic                                   pkt_len_0;
     
-    logic   [FLOWID_W-1:0]                  datapath_wr_buf_req_flowid;
+    vaddr_t                                 datapath_wr_buf_req_base_addr;
     logic   [RX_PAYLOAD_PTR_W-1:0]          datapath_wr_buf_req_wr_ptr;
     logic   [`MSG_DATA_SIZE_WIDTH-1:0]      datapath_wr_buf_req_size;
     
@@ -121,7 +133,7 @@ import tcp_pkg::*;
         ,.ctrl_wr_buf_wr_req_done_rdy               (ctrl_wr_buf_wr_req_done_rdy            )
                                                                                 
         ,.save_q_entry                              (save_q_entry                           )
-        ,.save_commit_ptr                           (save_commit_ptr                        )
+        ,.store_ptrs                           (store_ptrs                        )
         ,.init_tmp_buf_rd_metadata                  (init_tmp_buf_rd_metadata               )
         ,.update_tmp_buf_rd_metadata                (update_tmp_buf_rd_metadata             )
                                                                                 
@@ -150,14 +162,14 @@ import tcp_pkg::*;
         ,.store_buf_commit_ptr_wr_req_data          (store_buf_commit_ptr_wr_req_data           )
 
         ,.save_q_entry                              (save_q_entry                               )
-        ,.save_commit_ptr                           (save_commit_ptr                            )
+        ,.store_ptrs                           (store_ptrs                            )
         ,.init_tmp_buf_rd_metadata                  (init_tmp_buf_rd_metadata                   )
         ,.update_tmp_buf_rd_metadata                (update_tmp_buf_rd_metadata                 )
         ,.last_transfer                             (last_transfer                              )
         ,.accept_payload                            (accept_payload                             )
         ,.pkt_len_0                                 (pkt_len_0                                  )
 
-        ,.datapath_wr_buf_req_flowid                (datapath_wr_buf_req_flowid                 )
+        ,.datapath_wr_buf_req_base_addr             (datapath_wr_buf_req_base_addr              )
         ,.datapath_wr_buf_req_wr_ptr                (datapath_wr_buf_req_wr_ptr                 )
         ,.datapath_wr_buf_req_size                  (datapath_wr_buf_req_size                   )
                                                                                
@@ -194,13 +206,13 @@ import tcp_pkg::*;
          .clk   (clk    )
         ,.rst   (rst    )
 
-        ,.wr_buf_noc_req_noc_val    (rx_payload_noc0_val            )
-        ,.wr_buf_noc_req_noc_data   (rx_payload_noc0_data           )
-        ,.noc_wr_buf_req_noc_rdy    (noc0_rx_payload_rdy            )
+        ,.wr_buf_noc_req_noc_val    (rx_payload_monitor_val         )
+        ,.wr_buf_noc_req_noc_data   (rx_payload_monitor_data        )
+        ,.noc_wr_buf_req_noc_rdy    (monitor_rx_payload_rdy         )
 
-        ,.noc_wr_buf_resp_noc_val   (noc_rx_payload_val             )
-        ,.noc_wr_buf_resp_noc_data  (noc_rx_payload_data            )
-        ,.wr_buf_noc_resp_noc_rdy   (rx_payload_noc_rdy             )
+        ,.noc_wr_buf_resp_noc_val   (monitor_rx_payload_val         )
+        ,.noc_wr_buf_resp_noc_data  (monitor_rx_payload_data        )
+        ,.wr_buf_noc_resp_noc_rdy   (rx_payload_monitor_rdy         )
 
         ,.src_wr_buf_req_val        (ctrl_wr_buf_req_val            )
         ,.src_wr_buf_req_flowid     (datapath_wr_buf_req_flowid     )

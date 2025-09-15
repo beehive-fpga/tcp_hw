@@ -2,7 +2,7 @@
 `include "soc_defs.vh"
 module rd_circ_buf_new 
 import tcp_pkg::*;
-import mem_noc_helper_pkg::*;
+import mem_msg_pkg::*;
 #(
      parameter BUF_PTR_W=-1
     ,parameter SRC_X = 0
@@ -10,20 +10,21 @@ import mem_noc_helper_pkg::*;
     ,parameter DST_DRAM_X = 0
     ,parameter DST_DRAM_Y = 0
     ,parameter FBITS = 0
+    ,parameter MONITOR_DATA_W = -1
 )(
      input clk
     ,input rst
     
-    ,output logic                                   rd_buf_noc0_val
-    ,output logic   [`NOC_DATA_WIDTH-1:0]           rd_buf_noc0_data
-    ,input                                          noc0_rd_buf_rdy
+    ,output logic                                   rd_buf_monitor_val
+    ,output logic   [MONITOR_DATA_W-1:0]            rd_buf_monitor_data
+    ,input                                          monitor_rd_buf_rdy
    
-    ,input                                          noc0_rd_buf_val
-    ,input          [`NOC_DATA_WIDTH-1:0]           noc0_rd_buf_data
-    ,output logic                                   rd_buf_noc0_rdy
+    ,input                                          monitor_rd_buf_val
+    ,input          [MONITOR_DATA_W-1:0]            monitor_rd_buf_data
+    ,output logic                                   rd_buf_monitor_rdy
 
     ,input                                          src_rd_buf_req_val
-    ,input          [FLOWID_W-1:0]                  src_rd_buf_req_flowid
+    ,input  vaddr_t                                 src_rd_buf_req_base_addr
     ,input          [BUF_PTR_W-1:0]                 src_rd_buf_req_offset
     ,input          [`MSG_DATA_SIZE_WIDTH-1:0]      src_rd_buf_req_size
     ,output logic                                   rd_buf_src_req_rdy
@@ -97,7 +98,7 @@ import mem_noc_helper_pkg::*;
          .clk   (clk    )
         ,.rst   (rst    )
         
-        ,.src_rd_buf_req_flowid             (src_rd_buf_req_flowid          )
+        ,.src_rd_buf_req_base_addr          (src_rd_buf_req_base_addr       )
         ,.src_rd_buf_req_offset             (src_rd_buf_req_offset          )
         ,.src_rd_buf_req_size               (src_rd_buf_req_size            )
     
@@ -134,13 +135,13 @@ import mem_noc_helper_pkg::*;
          .clk   (clk    )
         ,.rst   (rst    )
     
-        ,.rd_mem_noc_req_noc_val    (rd_buf_noc0_val                    )
-        ,.rd_mem_noc_req_noc_data   (rd_buf_noc0_data                   )
-        ,.noc_rd_mem_req_noc_rdy    (noc0_rd_buf_rdy                    )
+        ,.rd_mem_noc_req_noc_val    (rd_buf_monitor_val                    )
+        ,.rd_mem_noc_req_noc_data   (rd_buf_monitor_data                   )
+        ,.noc_rd_mem_req_noc_rdy    (monitor_rd_buf_rdy                    )
     
-        ,.noc_rd_mem_resp_noc_val   (noc0_rd_buf_val                    )
-        ,.noc_rd_mem_resp_noc_data  (noc0_rd_buf_data                   )
-        ,.rd_mem_noc_resp_noc_rdy   (rd_buf_noc0_rdy                    )
+        ,.noc_rd_mem_resp_noc_val   (monitor_rd_buf_val                    )
+        ,.noc_rd_mem_resp_noc_data  (monitor_rd_buf_data                   )
+        ,.rd_mem_noc_resp_noc_rdy   (rd_buf_monitor_rdy                    )
     
         ,.src_rd_mem_req_val        (ctrl_rd_noc_req_val                )
         ,.src_rd_mem_req_entry      (datap_rd_noc_req                   )

@@ -16,13 +16,13 @@ import tcp_pkg::*;
     ,input rst
 
     // I/O for the NoC
-    ,output logic                                   tx_payload_noc0_val
-    ,output logic   [`NOC_DATA_WIDTH-1:0]           tx_payload_noc0_data
-    ,input                                          noc0_tx_payload_rdy
+    ,output logic                                   tx_payload_monitor_val
+    ,output logic   [`NOC_DATA_WIDTH-1:0]           tx_payload_monitor_data
+    ,input                                          monitor_tx_payload_rdy
    
-    ,input                                          noc0_tx_payload_val
-    ,input          [`NOC_DATA_WIDTH-1:0]           noc0_tx_payload_data
-    ,output logic                                   tx_payload_noc0_rdy
+    ,input                                          monitor_tx_payload_val
+    ,input          [`NOC_DATA_WIDTH-1:0]           monitor_tx_payload_data
+    ,output logic                                   tx_payload_monitor_rdy
     
     // Read req
     ,input                                          src_payload_tx_val
@@ -106,15 +106,15 @@ import tcp_pkg::*;
     ) rd_buf_engine (
          .clk   (clk)
         ,.rst   (rst)
-        
-        ,.rd_buf_noc0_val           (tx_payload_noc0_val            )
-        ,.rd_buf_noc0_data          (tx_payload_noc0_data           )
-        ,.noc0_rd_buf_rdy           (noc0_tx_payload_rdy            )
-                                                                    
-        ,.noc0_rd_buf_val           (noc0_tx_payload_val            )
-        ,.noc0_rd_buf_data          (noc0_tx_payload_data           )
-        ,.rd_buf_noc0_rdy           (tx_payload_noc0_rdy            )
-                                                                        
+
+        ,.rd_buf_monitor_val        (tx_payload_monitor_val    )
+        ,.rd_buf_monitor_data       (tx_payload_monitor_data   )
+        ,.monitor_rd_buf_rdy        (monitor_tx_payload_rdy    )
+   
+        ,.monitor_rd_buf_val        (monitor_tx_payload_val     )
+        ,.monitor_rd_buf_data       (monitor_tx_payload_data    )
+        ,.rd_buf_monitor_rdy        (tx_payload_monitor_rdy     )
+                                                                       
         ,.src_rd_buf_req_val        (ctrl_rd_mem_tx_req_val         )
         ,.src_rd_buf_req_flowid     (ctrl_rd_mem_tx_req_flowid      )
         ,.src_rd_buf_req_offset     (ctrl_rd_mem_tx_req_offset      )

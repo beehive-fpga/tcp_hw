@@ -1,7 +1,7 @@
 `include "noc_defs.vh"
 `include "soc_defs.vh"
 module rd_circ_buf_datap_new 
-import mem_noc_helper_pkg::*;
+import mem_msg_pkg::*;
 import tcp_pkg::*;
 #(
     parameter BUF_PTR_W=-1
@@ -9,7 +9,7 @@ import tcp_pkg::*;
      input clk
     ,input rst
     
-    ,input          [FLOWID_W-1:0]                  src_rd_buf_req_flowid
+    ,input  vaddr_t                                 src_rd_buf_req_base_addr
     ,input          [BUF_PTR_W-1:0]                 src_rd_buf_req_offset
     ,input          [`MSG_DATA_SIZE_WIDTH-1:0]      src_rd_buf_req_size
 
@@ -36,8 +36,8 @@ import tcp_pkg::*;
     ,output logic                                   datap_ctrl_last_data_out
 );
 
-    logic   [FLOWID_W-1:0]                  req_flowid_reg;
-    logic   [FLOWID_W-1:0]                  req_flowid_next;
+    vaddr_t                  base_addr_reg;
+    vaddr_t                  base_addr_next;
 
     logic   [`MSG_DATA_SIZE_WIDTH-1:0]      bytes_remain_reg;
     logic   [`MSG_DATA_SIZE_WIDTH-1:0]      bytes_remain_next;
@@ -100,7 +100,7 @@ import tcp_pkg::*;
 
     always_ff @(posedge clk) begin
         if (rst) begin
-            req_flowid_reg <= '0;
+            base_addr_reg <= '0;
 
             mem_req_reg <= '0;
             curr_offset_reg <= '0;
@@ -111,7 +111,7 @@ import tcp_pkg::*;
             shift_lower_reg <= '0;
         end
         else begin
-            req_flowid_reg <= req_flowid_next;
+            base_addr_reg <= base_addr_next;
 
             mem_req_reg <= mem_req_next;
             curr_offset_reg <= curr_offset_next;
@@ -129,8 +129,8 @@ import tcp_pkg::*;
                                 ? rd_noc_datap_resp_data_padbytes
                                 : shift_bytes_reg;
 
-    assign req_flowid_next = ctrl_datap_store_req_state
-                            ? src_rd_buf_req_flowid
+    assign base_addr_next = ctrl_datap_store_req_state
+                            ? src_rd_buf_req_base_addr
                             : req_flowid_reg;
 
     assign curr_offset_next = ctrl_datap_store_req_state
@@ -154,11 +154,14 @@ import tcp_pkg::*;
                         ? datap_rd_noc_req
                         : mem_req_reg;
 
+    logic   [VADDR_W-1:0]   base_addr_cast;
+
+    assign base_addr_cast = base_addr_reg;
     always_comb begin
         datap_rd_noc_req = '0;
         datap_rd_noc_req.mem_req_size = datap_ctrl_split_req
                                         ? space_to_end
                                         : bytes_remain_next;
-        datap_rd_noc_req.mem_req_addr = {req_flowid_next, curr_offset_next};
+        datap_rd_noc_req.mem_req_addr = base_addr_reg + curr_offset_next;
     end
 endmodule

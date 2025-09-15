@@ -24,6 +24,12 @@ module rx_payload_store_buf_cp_ctrl (
 
     ,output logic                                   store_buf_commit_ptr_wr_req_val
     ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
+    
+    ,input  logic                                   store_buf_base_addr_rd_req_val
+    ,output logic                                   base_addr_store_buf_rd_req_rdy
+
+    ,output logic                                   base_addr_store_buf_rd_resp_val
+    ,input  logic                                   store_buf_base_addr_rd_resp_rdy
 
     ,output logic                                   ctrl_wr_buf_req_val   
     ,input  logic                                   wr_buf_ctrl_req_rdy
@@ -35,7 +41,7 @@ module rx_payload_store_buf_cp_ctrl (
     ,output logic                                   ctrl_wr_buf_wr_req_done_rdy
     
     ,output logic                                   save_q_entry
-    ,output logic                                   save_commit_ptr
+    ,output logic                                   store_ptrs
     ,output logic                                   init_tmp_buf_rd_metadata
     ,output logic                                   update_tmp_buf_rd_metadata
 
@@ -46,7 +52,7 @@ module rx_payload_store_buf_cp_ctrl (
 
     typedef enum logic[2:0] {
         READY = 3'd0,
-        COMMIT_PTR_RESP = 3'd1,
+        PTRS_RESP = 3'd1,
         WR_REQ = 3'd2,
         DATA_COPY_START = 3'd3,
         DATA_COPY = 3'd4,
@@ -76,7 +82,7 @@ module rx_payload_store_buf_cp_ctrl (
         read_store_buf_q_req_val = 1'b0;
 
         save_q_entry = 1'b0;
-        save_commit_ptr = 1'b0;
+        store_ptrs = 1'b0;
         init_tmp_buf_rd_metadata = 1'b0;
         update_tmp_buf_rd_metadata = 1'b0;
 
@@ -85,6 +91,8 @@ module rx_payload_store_buf_cp_ctrl (
 
         store_buf_commit_ptr_rd_req_val = 1'b0;
         store_buf_commit_ptr_rd_resp_rdy = 1'b0;
+        store_buf_base_addr_rd_req_val = 1'b0;
+        store_buf_base_addr_rd_resp_rdy = 1'b0;
        
         store_buf_tmp_buf_free_slab_rx_req_val = 1'b0;
         store_buf_commit_ptr_wr_req_val = 1'b0;
@@ -92,33 +100,31 @@ module rx_payload_store_buf_cp_ctrl (
         state_next = state_reg;
         case (state_reg)
             READY: begin
+                save_q_entry = 1'b1;
                 if (~read_store_buf_q_empty) begin
-                    read_store_buf_q_req_val = 1'b1;
-                    save_q_entry = 1'b1;
                     if (pkt_len_0) begin
                         state_next = READY;
                     end
                     else if (~accept_payload) begin
                         state_next = FREE_NON_ACCEPTED;
                     end
-                    else if (commit_ptr_store_buf_rd_req_rdy) begin
+                    else if (commit_ptr_store_buf_rd_req_rdy & base_addr_store_buf_rd_req_rdy) begin
+                        read_store_buf_q_req_val = 1'b1;
                         store_buf_commit_ptr_rd_req_val = 1'b1;
+                        store_buf_base_addr_rd_req_val = 1'b1;
 
                         init_tmp_buf_rd_metadata = 1'b1;
 
-                        state_next = COMMIT_PTR_RESP;
+                        state_next = PTRS_RESP;
                     end
                 end
             end
-            COMMIT_PTR_RESP: begin
-                store_buf_commit_ptr_rd_resp_rdy = 1'b1;
-
-                if (commit_ptr_store_buf_rd_resp_val) begin
-                    save_commit_ptr = 1'b1;
+            PTRS_RESP: begin
+                if (commit_ptr_store_buf_rd_resp_val & base_addr_store_buf_rd_resp_val) begin
+                    store_buf_commit_ptr_rd_resp_rdy = 1'b1;
+                    store_buf_base_addr_rd_resp_rdy = 1'b1;
+                    store_ptrs = 1'b1;
                     state_next = DATA_COPY_START;
-                end
-                else begin
-                    state_next = COMMIT_PTR_RESP;
                 end
             end
             DATA_COPY_START: begin
@@ -156,9 +162,6 @@ module rx_payload_store_buf_cp_ctrl (
                 if (wr_buf_ctrl_wr_req_done) begin
                     state_next = UPDATE_POINTER;
                 end
-                else begin
-                    state_next = DATA_COPY_WAIT;
-                end
             end
             UPDATE_POINTER: begin
                 if (commit_ptr_store_buf_wr_req_rdy & tmp_buf_free_slab_store_buf_rx_req_rdy) begin
@@ -167,17 +170,11 @@ module rx_payload_store_buf_cp_ctrl (
                 
                     state_next = READY;
                 end
-                else begin
-                    state_next = UPDATE_POINTER;
-                end
             end
             FREE_NON_ACCEPTED: begin
                 store_buf_tmp_buf_free_slab_rx_req_val = 1'b1;
                 if (tmp_buf_free_slab_store_buf_rx_req_rdy) begin
                     state_next = READY;
-                end
-                else begin
-                    state_next = FREE_NON_ACCEPTED;
                 end
             end
             default: begin
@@ -188,7 +185,7 @@ module rx_payload_store_buf_cp_ctrl (
                 read_store_buf_q_req_val = 'X;
 
                 save_q_entry = 'X;
-                save_commit_ptr = 'X;
+                store_ptrs = 'X;
                 init_tmp_buf_rd_metadata = 'X;
                 update_tmp_buf_rd_metadata = 'X;
 
