@@ -5,6 +5,7 @@
 module frontend_tx_payload_engine 
 import packet_struct_pkg::*;
 import tcp_pkg::*;
+import mem_msg_pkg::*;
 #( 
      parameter SRC_X = 0
     ,parameter SRC_Y = 0
@@ -27,7 +28,7 @@ import tcp_pkg::*;
     // Read req
     ,input                                          src_payload_tx_val
     ,output logic                                   payload_src_tx_rdy
-    ,input          [FLOWID_W-1:0]                  src_payload_tx_flowid
+    ,input  vaddr_t                                 src_payload_tx_base_addr
     ,input          [`IP_ADDR_W-1:0]                src_payload_tx_src_ip
     ,input          [`IP_ADDR_W-1:0]                src_payload_tx_dst_ip
     ,input  tcp_pkt_hdr                             src_payload_tx_tcp_hdr
@@ -83,7 +84,7 @@ import tcp_pkg::*;
     payload_buf_struct              src_payload_tx_payload_entry_cast;
     
     logic                                   ctrl_rd_mem_tx_req_val;
-    logic   [FLOWID_W-1:0]                  ctrl_rd_mem_tx_req_flowid;
+    vaddr_t                                 ctrl_rd_mem_tx_req_base_addr;
     logic   [TX_PAYLOAD_PTR_W-1:0]          ctrl_rd_mem_tx_req_offset;
     logic   [`MSG_DATA_SIZE_WIDTH-1:0]      ctrl_rd_mem_tx_req_size;
     logic                                   rd_mem_ctrl_tx_req_rdy;
@@ -97,12 +98,13 @@ import tcp_pkg::*;
 
     
     rd_circ_buf_new #(
-         .BUF_PTR_W     (TX_PAYLOAD_PTR_W   )
-        ,.SRC_X         (SRC_X              )
-        ,.SRC_Y         (SRC_Y              )
-        ,.DST_DRAM_X    (TX_DRAM_X          )
-        ,.DST_DRAM_Y    (TX_DRAM_Y          )
-        ,.FBITS         (FBITS              )
+         .BUF_PTR_W         (TX_PAYLOAD_PTR_W   )
+        ,.SRC_X             (SRC_X              )
+        ,.SRC_Y             (SRC_Y              )
+        ,.DST_DRAM_X        (TX_DRAM_X          )
+        ,.DST_DRAM_Y        (TX_DRAM_Y          )
+        ,.FBITS             (FBITS              )
+        ,.MONITOR_DATA_W    (`NOC_DATA_WIDTH    )
     ) rd_buf_engine (
          .clk   (clk)
         ,.rst   (rst)
@@ -116,7 +118,7 @@ import tcp_pkg::*;
         ,.rd_buf_monitor_rdy        (tx_payload_monitor_rdy     )
                                                                        
         ,.src_rd_buf_req_val        (ctrl_rd_mem_tx_req_val         )
-        ,.src_rd_buf_req_flowid     (ctrl_rd_mem_tx_req_flowid      )
+        ,.src_rd_buf_req_base_addr  (ctrl_rd_mem_tx_req_base_addr   )
         ,.src_rd_buf_req_offset     (ctrl_rd_mem_tx_req_offset      )
         ,.src_rd_buf_req_size       (ctrl_rd_mem_tx_req_size        )
         ,.rd_buf_src_req_rdy        (rd_mem_ctrl_tx_req_rdy         )
@@ -151,7 +153,7 @@ import tcp_pkg::*;
         end
     end
 
-    assign ctrl_rd_mem_tx_req_flowid = src_payload_tx_flowid;
+    assign ctrl_rd_mem_tx_req_base_addr = src_payload_tx_base_addr;
     assign ctrl_rd_mem_tx_req_offset = src_payload_tx_payload_entry_cast.payload_addr;
     assign ctrl_rd_mem_tx_req_size = src_payload_tx_payload_entry_cast.payload_len;
 

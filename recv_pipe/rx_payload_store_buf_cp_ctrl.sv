@@ -25,11 +25,11 @@ module rx_payload_store_buf_cp_ctrl (
     ,output logic                                   store_buf_commit_ptr_wr_req_val
     ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
     
-    ,input  logic                                   store_buf_base_addr_rd_req_val
-    ,output logic                                   base_addr_store_buf_rd_req_rdy
+    ,output logic                                   store_buf_base_addr_rd_req_val
+    ,input  logic                                   base_addr_store_buf_rd_req_rdy
 
-    ,output logic                                   base_addr_store_buf_rd_resp_val
-    ,input  logic                                   store_buf_base_addr_rd_resp_rdy
+    ,input  logic                                   base_addr_store_buf_rd_resp_val
+    ,output logic                                   store_buf_base_addr_rd_resp_rdy
 
     ,output logic                                   ctrl_wr_buf_req_val   
     ,input  logic                                   wr_buf_ctrl_req_rdy

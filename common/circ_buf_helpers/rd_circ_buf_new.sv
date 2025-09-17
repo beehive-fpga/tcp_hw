@@ -135,13 +135,13 @@ import mem_msg_pkg::*;
          .clk   (clk    )
         ,.rst   (rst    )
     
-        ,.rd_mem_noc_req_noc_val    (rd_buf_monitor_val                    )
-        ,.rd_mem_noc_req_noc_data   (rd_buf_monitor_data                   )
-        ,.noc_rd_mem_req_noc_rdy    (monitor_rd_buf_rdy                    )
+        ,.rd_mem_noc_req_noc_val    (rd_buf_monitor_val     )
+        ,.rd_mem_noc_req_noc_data   (rd_buf_monitor_data    )
+        ,.noc_rd_mem_req_noc_rdy    (monitor_rd_buf_rdy     )
     
-        ,.noc_rd_mem_resp_noc_val   (monitor_rd_buf_val                    )
-        ,.noc_rd_mem_resp_noc_data  (monitor_rd_buf_data                   )
-        ,.rd_mem_noc_resp_noc_rdy   (rd_buf_monitor_rdy                    )
+        ,.noc_rd_mem_resp_noc_val   (monitor_rd_buf_val     )
+        ,.noc_rd_mem_resp_noc_data  (monitor_rd_buf_data    )
+        ,.rd_mem_noc_resp_noc_rdy   (rd_buf_monitor_rdy     )
     
         ,.src_rd_mem_req_val        (ctrl_rd_noc_req_val                )
         ,.src_rd_mem_req_entry      (datap_rd_noc_req                   )

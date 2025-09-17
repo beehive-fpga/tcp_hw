@@ -27,8 +27,6 @@ import mem_msg_pkg::*;
     ,input  rx_store_buf_q_struct                   read_store_buf_q_req_data
     ,input  logic                                   read_store_buf_q_empty
 
-    ,input  logic                                   
-
     // for getting stuff from the temp buffer
     ,output logic                                   store_buf_tmp_buf_store_rx_rd_req_val
     ,output logic   [PAYLOAD_ENTRY_ADDR_W-1:0]      store_buf_tmp_buf_store_rx_rd_req_addr
@@ -55,13 +53,13 @@ import mem_msg_pkg::*;
     ,output logic   [RX_PAYLOAD_PTR_W:0]            store_buf_commit_ptr_wr_req_data
     ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
     
-    ,input  logic                                   store_buf_base_addr_rd_req_val
-    ,input  logic   [FLOWID_W-1:0]                  store_buf_base_addr_rd_req_addr
-    ,output logic                                   base_addr_store_buf_rd_req_rdy
+    ,output logic                                   store_buf_base_addr_rd_req_val
+    ,output logic   [FLOWID_W-1:0]                  store_buf_base_addr_rd_req_addr
+    ,input  logic                                   base_addr_store_buf_rd_req_rdy
 
-    ,output logic                                   base_addr_store_buf_rd_resp_val
-    ,output vaddr_t                                 base_addr_store_buf_rd_resp_data
-    ,input  logic                                   store_buf_base_addr_rd_resp_rdy
+    ,input  logic                                   base_addr_store_buf_rd_resp_val
+    ,input  vaddr_t                                 base_addr_store_buf_rd_resp_data
+    ,output logic                                   store_buf_base_addr_rd_resp_rdy
 );
     
     logic                                   ctrl_wr_buf_req_val;
@@ -122,6 +120,12 @@ import mem_msg_pkg::*;
 
         ,.store_buf_commit_ptr_wr_req_val           (store_buf_commit_ptr_wr_req_val        )
         ,.commit_ptr_store_buf_wr_req_rdy           (commit_ptr_store_buf_wr_req_rdy        )
+    
+        ,.store_buf_base_addr_rd_req_val            (store_buf_base_addr_rd_req_val         )
+        ,.base_addr_store_buf_rd_req_rdy            (base_addr_store_buf_rd_req_rdy         )
+                                                     
+        ,.base_addr_store_buf_rd_resp_val           (base_addr_store_buf_rd_resp_val        )
+        ,.store_buf_base_addr_rd_resp_rdy           (store_buf_base_addr_rd_resp_rdy        )
 
         ,.ctrl_wr_buf_req_val                       (ctrl_wr_buf_req_val                    )
         ,.wr_buf_ctrl_req_rdy                       (wr_buf_ctrl_req_rdy                    )
@@ -160,6 +164,10 @@ import mem_msg_pkg::*;
 
         ,.store_buf_commit_ptr_wr_req_flowid        (store_buf_commit_ptr_wr_req_flowid         )
         ,.store_buf_commit_ptr_wr_req_data          (store_buf_commit_ptr_wr_req_data           )
+    
+        ,.store_buf_base_addr_rd_req_addr           (store_buf_base_addr_rd_req_addr            )
+                                                     
+        ,.base_addr_store_buf_rd_resp_data          (base_addr_store_buf_rd_resp_data           )
 
         ,.save_q_entry                              (save_q_entry                               )
         ,.store_ptrs                           (store_ptrs                            )
@@ -215,7 +223,7 @@ import mem_msg_pkg::*;
         ,.wr_buf_noc_resp_noc_rdy   (rx_payload_monitor_rdy         )
 
         ,.src_wr_buf_req_val        (ctrl_wr_buf_req_val            )
-        ,.src_wr_buf_req_flowid     (datapath_wr_buf_req_flowid     )
+        ,.src_wr_buf_req_base_addr  (datapath_wr_buf_req_base_addr  )
         ,.src_wr_buf_req_wr_ptr     (datapath_wr_buf_req_wr_ptr     )
         ,.src_wr_buf_req_size       (datapath_wr_buf_req_size       )
         ,.wr_buf_src_req_rdy        (wr_buf_ctrl_req_rdy            )

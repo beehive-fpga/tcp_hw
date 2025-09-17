@@ -3,7 +3,7 @@
 
 module rx_payload_store_buf_cp_datapath 
 import tcp_pkg::*;
-import buf_mgmt_pkg::*;
+import mem_msg_pkg::*;
 (
      input  clk
     ,input  rst
@@ -19,9 +19,9 @@ import buf_mgmt_pkg::*;
     
     ,input  logic   [RX_PAYLOAD_PTR_W:0]            commit_ptr_store_buf_rd_resp_data
     
-    ,input  logic   [FLOWID_W-1:0]                  store_buf_base_addr_rd_req_addr
+    ,output logic   [FLOWID_W-1:0]                  store_buf_base_addr_rd_req_addr
 
-    ,output vaddr_t                                 base_addr_store_buf_rd_resp_data
+    ,input  vaddr_t                                 base_addr_store_buf_rd_resp_data
 
     ,output logic   [FLOWID_W-1:0]                  store_buf_commit_ptr_wr_req_flowid
     ,output logic   [RX_PAYLOAD_PTR_W:0]            store_buf_commit_ptr_wr_req_data
