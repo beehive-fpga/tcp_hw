@@ -103,9 +103,11 @@ module rx_payload_store_buf_cp_ctrl (
                 save_q_entry = 1'b1;
                 if (~read_store_buf_q_empty) begin
                     if (pkt_len_0) begin
+                        read_store_buf_q_req_val = 1'b1;
                         state_next = READY;
                     end
                     else if (~accept_payload) begin
+                        read_store_buf_q_req_val = 1'b1;
                         state_next = FREE_NON_ACCEPTED;
                     end
                     else if (commit_ptr_store_buf_rd_req_rdy & base_addr_store_buf_rd_req_rdy) begin
