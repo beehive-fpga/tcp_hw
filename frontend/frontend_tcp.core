@@ -1,0 +1,27 @@
+CAPI=2:
+name: uwcse:buckfast:frontend_tcp:0.1
+description: Buckfast frontend files
+
+filesets:
+    rtl:
+        files:
+            - frontend_tx_chksum_engine.sv
+            - frontend_tx_payload_engine.sv
+            - tcp_tx_chksum_input_ctrl.sv
+            - tcp_tx_chksum_output_ctrl.sv
+            - rx_tcp_format_wrap.sv
+            - rx_tcp_format_input_ctrl.sv
+            - rx_tcp_format_output_ctrl.sv
+            - tcp_to_stream.sv
+        depend:
+            - uwcse:beehive:tracker
+            - uwcse:beehive:common_inc
+            - uwcse:beehive:fifo
+            - uwcse:beehive:circ_buf_helpers
+            - uwcse:beehive:data_converters
+            - uwcse:buckfast:frontend
+        file_type: systemVerilogSource
+
+targets:
+    default:
+        filesets: [rtl]

@@ -28,20 +28,10 @@ filesets:
             - udp_rx_chksum_input_ctrl.sv
             - udp_rx_chksum_output_ctrl.sv
             - chksum_calc.sv
-            - frontend_tx_chksum_engine.sv
-            - frontend_tx_payload_engine.sv
-            - tcp_tx_chksum_input_ctrl.sv
-            - tcp_tx_chksum_output_ctrl.sv
-            - rx_tcp_format_wrap.sv
-            - rx_tcp_format_input_ctrl.sv
-            - rx_tcp_format_output_ctrl.sv
-            - tcp_to_stream.sv
-
         depend:
             - uwcse:beehive:tracker
             - uwcse:beehive:common_inc
             - uwcse:beehive:fifo
-            - uwcse:beehive:circ_buf_helpers
             - uwcse:beehive:data_converters
         file_type: systemVerilogSource
 
