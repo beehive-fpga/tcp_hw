@@ -38,18 +38,27 @@ import tcp_pkg::*;
     ,output logic   [RX_TMP_BUF_ADDR_W-1:0]         store_buf_tmp_buf_free_slab_rx_req_addr
     ,input  logic                                   tmp_buf_free_slab_store_buf_rx_req_rdy
 
-    ,output logic                                   store_buf_commit_ptr_rd_req_val
-    ,output logic   [FLOWID_W-1:0]                  store_buf_commit_ptr_rd_req_flowid
-    ,input  logic                                   commit_ptr_store_buf_rd_req_rdy
+    ,output logic                                   store_buf_commit_idx_rd_req_val
+    ,output logic   [FLOWID_W-1:0]                  store_buf_commit_idx_rd_req_flowid
+    ,input  logic                                   commit_idx_store_buf_rd_req_rdy
                                                                             
-    ,input  logic                                   commit_ptr_store_buf_rd_resp_val
-    ,input  logic   [RX_PAYLOAD_PTR_W:0]            commit_ptr_store_buf_rd_resp_data
-    ,output logic                                   store_buf_commit_ptr_rd_resp_rdy
+    ,input  logic                                   commit_idx_store_buf_rd_resp_val
+    ,input  tcp_buf_idx                             commit_idx_store_buf_rd_resp_data
+    ,output logic                                   store_buf_commit_idx_rd_resp_rdy
     
-    ,output logic                                   store_buf_commit_ptr_wr_req_val
-    ,output logic   [FLOWID_W-1:0]                  store_buf_commit_ptr_wr_req_flowid
-    ,output logic   [RX_PAYLOAD_PTR_W:0]            store_buf_commit_ptr_wr_req_data
-    ,input  logic                                   commit_ptr_store_buf_wr_req_rdy
+    ,output logic                                   store_buf_commit_idx_wr_req_val
+    ,output logic   [FLOWID_W-1:0]                  store_buf_commit_idx_wr_req_flowid
+    ,output tcp_buf_idx                             store_buf_commit_idx_wr_req_data
+    ,input  logic                                   commit_idx_store_buf_wr_req_rdy
+
+    ,output                                 rx_store_buf_rx_buf_store_rd_req_val
+    ,output         [FLOWID_W-1:0]          rx_store_buf_rx_buf_store_rd_req_flowid
+    ,output         [RX_PAYLOAD_IDX_W-1:0]  rx_store_buf_rx_buf_store_rd_req_idx
+    ,input logic                            rx_buf_store_rx_store_buf_rd_req_rdy
+
+    ,input logic                            rx_buf_store_rx_store_buf_rd_resp_val
+    ,input          tcp_buf                 rx_buf_store_rx_store_buf_rd_resp_data
+    ,output                                 rx_store_buf_rx_buf_store_rd_resp_rdy
 );
     
     logic                                   ctrl_wr_buf_req_val;
@@ -62,7 +71,8 @@ import tcp_pkg::*;
     logic                                   ctrl_wr_buf_wr_req_done_rdy;
 
     logic                                   save_q_entry;
-    logic                                   save_commit_ptr;
+    logic                                   save_commit_idx;
+    logic                                   save_commit_real_ptr;
     logic                                   init_tmp_buf_rd_metadata;
     logic                                   update_tmp_buf_rd_metadata;
 
@@ -102,14 +112,20 @@ import tcp_pkg::*;
         ,.store_buf_tmp_buf_free_slab_rx_req_val    (store_buf_tmp_buf_free_slab_rx_req_val )
         ,.tmp_buf_free_slab_store_buf_rx_req_rdy    (tmp_buf_free_slab_store_buf_rx_req_rdy )
 
-        ,.store_buf_commit_ptr_rd_req_val           (store_buf_commit_ptr_rd_req_val        )
-        ,.commit_ptr_store_buf_rd_req_rdy           (commit_ptr_store_buf_rd_req_rdy        )
+        ,.store_buf_commit_idx_rd_req_val           (store_buf_commit_idx_rd_req_val        )
+        ,.commit_idx_store_buf_rd_req_rdy           (commit_idx_store_buf_rd_req_rdy        )
 
-        ,.commit_ptr_store_buf_rd_resp_val          (commit_ptr_store_buf_rd_resp_val       )
-        ,.store_buf_commit_ptr_rd_resp_rdy          (store_buf_commit_ptr_rd_resp_rdy       )
+        ,.commit_idx_store_buf_rd_resp_val          (commit_idx_store_buf_rd_resp_val       )
+        ,.store_buf_commit_idx_rd_resp_rdy          (store_buf_commit_idx_rd_resp_rdy       )
 
-        ,.store_buf_commit_ptr_wr_req_val           (store_buf_commit_ptr_wr_req_val        )
-        ,.commit_ptr_store_buf_wr_req_rdy           (commit_ptr_store_buf_wr_req_rdy        )
+        ,.store_buf_commit_idx_wr_req_val           (store_buf_commit_idx_wr_req_val        )
+        ,.commit_idx_store_buf_wr_req_rdy           (commit_idx_store_buf_wr_req_rdy        )
+
+        ,.rx_store_buf_rx_buf_store_rd_req_val(rx_store_buf_rx_buf_store_rd_req_val)
+        ,.rx_buf_store_rx_store_buf_rd_req_rdy(rx_buf_store_rx_store_buf_rd_req_rdy)
+
+        ,.rx_buf_store_rx_store_buf_rd_resp_val(rx_buf_store_rx_store_buf_rd_resp_val)
+        ,.rx_store_buf_rx_buf_store_rd_resp_rdy(rx_store_buf_rx_buf_store_rd_resp_rdy)
 
         ,.ctrl_wr_buf_req_val                       (ctrl_wr_buf_req_val                    )
         ,.wr_buf_ctrl_req_rdy                       (wr_buf_ctrl_req_rdy                    )
@@ -121,7 +137,8 @@ import tcp_pkg::*;
         ,.ctrl_wr_buf_wr_req_done_rdy               (ctrl_wr_buf_wr_req_done_rdy            )
                                                                                 
         ,.save_q_entry                              (save_q_entry                           )
-        ,.save_commit_ptr                           (save_commit_ptr                        )
+        ,.save_commit_idx                           (save_commit_idx                        )
+        ,.save_commit_real_ptr                      (save_commit_real_ptr                   )
         ,.init_tmp_buf_rd_metadata                  (init_tmp_buf_rd_metadata               )
         ,.update_tmp_buf_rd_metadata                (update_tmp_buf_rd_metadata             )
                                                                                 
@@ -142,15 +159,21 @@ import tcp_pkg::*;
 
         ,.store_buf_tmp_buf_free_slab_rx_req_addr   (store_buf_tmp_buf_free_slab_rx_req_addr    )
 
-        ,.store_buf_commit_ptr_rd_req_flowid        (store_buf_commit_ptr_rd_req_flowid         )
+        ,.store_buf_commit_idx_rd_req_flowid        (store_buf_commit_idx_rd_req_flowid         )
 
-        ,.commit_ptr_store_buf_rd_resp_data         (commit_ptr_store_buf_rd_resp_data          )
+        ,.commit_idx_store_buf_rd_resp_data         (commit_idx_store_buf_rd_resp_data          )
 
-        ,.store_buf_commit_ptr_wr_req_flowid        (store_buf_commit_ptr_wr_req_flowid         )
-        ,.store_buf_commit_ptr_wr_req_data          (store_buf_commit_ptr_wr_req_data           )
+        ,.store_buf_commit_idx_wr_req_flowid        (store_buf_commit_idx_wr_req_flowid         )
+        ,.store_buf_commit_idx_wr_req_data          (store_buf_commit_idx_wr_req_data           )
+
+        ,.rx_store_buf_rx_buf_store_rd_req_flowid(rx_store_buf_rx_buf_store_rd_req_flowid)
+        ,.rx_store_buf_rx_buf_store_rd_req_idx(rx_store_buf_rx_buf_store_rd_req_idx)
+
+        ,.rx_buf_store_rx_store_buf_rd_resp_data(rx_buf_store_rx_store_buf_rd_resp_data)
 
         ,.save_q_entry                              (save_q_entry                               )
-        ,.save_commit_ptr                           (save_commit_ptr                            )
+        ,.save_commit_idx                           (save_commit_idx                            )
+        ,.save_commit_real_ptr                      (save_commit_real_ptr                       )
         ,.init_tmp_buf_rd_metadata                  (init_tmp_buf_rd_metadata                   )
         ,.update_tmp_buf_rd_metadata                (update_tmp_buf_rd_metadata                 )
         ,.last_transfer                             (last_transfer                              )
@@ -204,7 +227,7 @@ import tcp_pkg::*;
 
         ,.src_wr_buf_req_val        (ctrl_wr_buf_req_val            )
         ,.src_wr_buf_req_flowid     (datapath_wr_buf_req_flowid     )
-        ,.src_wr_buf_req_wr_ptr     (datapath_wr_buf_req_wr_ptr     )
+        ,.src_wr_buf_req_wr_ptr     (datapath_wr_buf_req_wr_ptr     ) // TODO: need to add a state in the Ctrl FSM to convert commit idx to a pointer.
         ,.src_wr_buf_req_size       (datapath_wr_buf_req_size       )
         ,.wr_buf_src_req_rdy        (wr_buf_ctrl_req_rdy            )
 
